@@ -11,31 +11,24 @@ RUN RAM
 @DEFINE tempReg2 R4
 // these must be set to 2 registers that you will not use in programs created by the user
 
-.setup
 // calculate lengths of the translated instructions
-    IMM R1 .imm1
-    IMM R2 .imm2
-    NOR R2 R2 R2
-    ADD R1 R1 R2
-    NOR R1 R1 R1 // .imm2 - .imm1
-    IMM R2 .immskiplength
-    STR R2 R1
+.printInstructionLengths
+    IMM R1 .hashmap // start
+    IMM R2 .endOfHashmap // end
 
-    .printInstructionLengths
-        IMM R1 .hashmap // start
-        IMM R2 .instructionLookUpTable // end
-
-        .printInstructionLengths_loop
-            LOD R3 R1 // load pointer to start of instruction
-            IMM R4 1
-            ADD R1 R1 R4
-            LOD R4 R1 // load pointer to next instruction
-            NOR R4 R4 R0
-            ADD R3 R3 R4
-            NOR R3 R3 R0 // subtraction then print
-            OUT %NUMB R3
-            IMM R3 .printInstructionLengths_loop
-            BGE R3 R2 R1 // if end >= current pointer
+    .printInstructionLengths_loop
+        LOD R3 R1 // load pointer to start of instruction
+        NOR R4 R0 R0
+        ADD R4 R4 R4
+        NOR R4 R4 R0 // IMM R4 1
+        ADD R1 R1 R4
+        LOD R4 R1 // load pointer to next instruction
+        NOR R4 R4 R0
+        ADD R3 R3 R4
+        NOR R3 R3 R0 // subtraction then print
+        OUT %NUMB R3
+        IMM R3 .printInstructionLengths_loop
+        BGE R3 R2 R1 // if end >= current pointer
 
 .main
     // read user input (2 numbers)
@@ -45,7 +38,9 @@ RUN RAM
     IMM R2 .hashmap
     ADD R2 R1 R2
     LOD R1 R2 // start pointer
-    IMM R3 1
+    NOR R3 R0 R0
+    ADD R3 R3 R3
+    NOR R3 R3 R0 // IMM R3 1
     ADD R2 R2 R3
     LOD R2 R2 // end pointer
 
@@ -57,8 +52,10 @@ RUN RAM
 
     .mainLoop
         LOD R4 R1
-        STR R3 R4
-        IMM R4 1
+        STR R3 R4 // CPY R3 R1
+        NOR R4 R0 R0
+        ADD R4 R4 R4
+        NOR R4 R4 R0 // IMM R4 1
         ADD R1 R1 R4
         ADD R3 R3 R4
         IMM R4 .jumpLocation
@@ -78,8 +75,6 @@ RUN RAM
     .jumpLocation
         DW .mainLoop
         // this exists to allow you to overwrite it and make the terminal jump to your new code
-    .immskiplength
-        DW 0
 
 .hashmap
     DW 0 // .DW
@@ -89,24 +84,22 @@ RUN RAM
     DW .LOD
     DW .STR 
     DW .BGE
-    DW .IMM
     DW .IN_NUMB
     DW .OUT_TEXT // add whatever I/O ports you want here
     DW .MOVT1R1
     DW .MOVT1R2
-    DW .MOVT1R3
     DW .MOVT1SP
     DW .MOVT1PC // there is a MOV instruction for every register in the main LUT
     DW .MOVT2R1
     DW .MOVT2R2
-    DW .MOVT2R3
     DW .MOVT2SP
     DW .MOVT2PC
     DW .MOVR1T1
     DW .MOVR2T1
-    DW .MOVR3T1
     DW .MOVSPT1
+.endOfHashmap // must be second from last location
     DW .MOVPCT1
+    DW .end
 
 .instructionLookUpTable
     .ADD
@@ -121,15 +114,6 @@ RUN RAM
         STR @tempReg1 @tempReg2
     .BGE
         BGE @tempReg1 @tempReg1 @tempReg2
-    .IMM
-        IMM @tempReg2 2
-        IMM @tempReg1 .immskiplength
-        LOD @tempReg1 @tempReg1
-        ADD @tempReg1 PC @tempReg1
-        .imm1
-        LOD @tempReg1 @tempReg1
-        ADD PC PC @tempReg2
-        .imm2
     .IN_NUMB
         IN @tempReg2 %TEXT
     .OUT_TEXT
@@ -138,8 +122,6 @@ RUN RAM
         ADD @tempReg1 R1 R0
     .MOVT1R2
         ADD @tempReg1 R2 R0
-    .MOVT1R3
-        ADD @tempReg1 R3 R0
     .MOVT1SP
         ADD @tempReg1 SP R0
     .MOVT1PC
@@ -148,8 +130,6 @@ RUN RAM
         ADD @tempReg2 R1 R0
     .MOVT2R2
         ADD @tempReg2 R2 R0
-    .MOVT2R3
-        ADD @tempReg2 R3 R0
     .MOVT2SP
         ADD @tempReg2 SP R0
     .MOVT2PC
@@ -158,9 +138,8 @@ RUN RAM
         ADD R1 @tempReg1 R0
     .MOVR2T1
         ADD R2 @tempReg1 R0
-    .MOVR3T1
-        ADD R3 @tempReg1 R0
     .MOVSPT1
         ADD SP @tempReg1 R0
     .MOVPCT1
         ADD PC @tempReg1 R0
+.end

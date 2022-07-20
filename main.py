@@ -163,6 +163,12 @@ OUT = 7
 
 # initialise RAM with a program
 memoryEditor = [
+    0x0540, # NOR R5 R0 R0
+    0x0500, # NOR R4 R0 R0
+    0x0165, # ADD R5 R4 R5
+    0x0165, # ADD R5 R4 R5
+    0x0568, # NOR R5 R5 R0
+    
     0x0C40, # IN R1 %NUMB
     0x0C80, # IN R2 %NUMB
     0x0A0A, # STR R1 R2
@@ -185,7 +191,7 @@ drawScreen(display)
 while True:
     # fetch instruction
     instruction = ram[registers[PC]]
-    print(disassemble(instruction))
+    #print(disassemble(instruction))
 
     opCode = (instruction & 0x0E00) >> 9
     op1    = (instruction & 0x01C0) >> 6

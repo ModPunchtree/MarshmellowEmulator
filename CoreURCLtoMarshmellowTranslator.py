@@ -88,6 +88,14 @@ while lineNumber < len(code):
     else:
         lineNumber += 1
     
+    # find and resolve @ORG
+org = 0
+for lineNumber in range(len(code)):
+    if code[lineNumber][0] == "@ORG":
+        org = int(code[lineNumber][1], 0)
+        code.pop(lineNumber)
+        break
+
     # convert relatives to labels
 lineNumber = 0
 while lineNumber < len(code):
@@ -151,10 +159,8 @@ while lineNumber < len(code):
 
     # prepend code to setup R5 as a constant value of 2
 code = [
-    ["ADD", "R5", "R0", "R0"],
-    ["ADD", "R4", "R0", "R0"],
-    ["NOR", "R4", "R4", "R0"],
-    ["ADD", "R5", "R4", "R5"],
+    ["NOR", "R5", "R0", "R0"],
+    ["NOR", "R4", "R0", "R0"],
     ["ADD", "R5", "R4", "R5"],
     ["ADD", "R5", "R4", "R5"],
     ["NOR", "R5", "R5", "R0"]
