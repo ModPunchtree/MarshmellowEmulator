@@ -1,0 +1,398 @@
+BITS >= 8
+// 8 bit technically works but will be terrible, use 16 bit for smt usable
+MINREG 5
+// only 4 registers are used but a constant value of 2 is needed which is what R5 is used for
+RUN RAM
+
+.setup
+// initialise constant register
+IMM R5 2
+// calculate lengths of instructions
+IMM R1 .imm1
+IMM R2 .imm2
+NOR R2 R2 R2
+ADD R1 R1 R2
+NOR R1 R1 R1 // .imm2 - .imm1
+STR .immskiplength R1
+
+.start
+// read user input (2 numbers)
+// first number chooses instruction
+IN R1 %NUMB
+
+.copyInstruction
+IMM R2 .hashmap
+ADD R2 R1 R2
+LOD R1 R2 // start pointer
+IMM R3 1
+ADD R2 R2 R3
+LOD R2 R2 // end pointer
+
+// second number is the target memory location
+IN R3 %NUMB
+
+BGE .directword R0 R1
+
+.loop
+LOD R4 R1
+STR R3 R4
+IMM R4 1
+ADD R1 R1 R4
+ADD R3 R3 R4
+IMM R4 .jumplocation
+LOD R4 R4
+BGE R4 R1 R2 // if start >= end
+IMM R4 .loop
+BGE R4 R4 R4
+
+.directword
+IN R1 %NUMB // get dw value
+STR R3 R1
+IMM R1 .jumplocation
+LOD R1 R1
+BGE R1 R1 R1
+
+.constants
+.immskiplength
+DW 0
+.jumplocation
+DW .start
+
+.hashmap
+DW .dw
+DW .addr1r1r1 // 1 is this instruction
+DW .addr1r1r2 // 2
+DW .addr1r1r3 // 3
+DW .addr1r1r4 // 4
+// there is a DW value here for every instruction in the next lut
+DW .end
+
+// look up table of core instructions
+// every combination of instruction + registers must go here
+// this table has been designed to be extremely easy to expand by writing more definitions to the end of the table
+
+// ADD
+.addr1r1r1
+ADD R1 R1 R1
+.addr1r1r2
+ADD R1 R1 R2
+.addr1r1r3
+ADD R1 R1 R3
+.addr1r1r4
+ADD R1 R1 R4
+ADD R1 R2 R1
+ADD R1 R2 R2
+ADD R1 R2 R3
+ADD R1 R2 R4
+ADD R1 R3 R1
+ADD R1 R3 R2
+ADD R1 R3 R3
+ADD R1 R3 R4
+ADD R1 R4 R1
+ADD R1 R4 R2
+ADD R1 R4 R3
+ADD R1 R4 R4
+
+ADD R2 R1 R1
+ADD R2 R1 R2
+ADD R2 R1 R3
+ADD R2 R1 R4
+ADD R2 R2 R1
+ADD R2 R2 R2
+ADD R2 R2 R3
+ADD R2 R2 R4
+ADD R2 R3 R1
+ADD R2 R3 R2
+ADD R2 R3 R3
+ADD R2 R3 R4
+ADD R2 R4 R1
+ADD R2 R4 R2
+ADD R2 R4 R3
+ADD R2 R4 R4
+
+ADD R3 R1 R1
+ADD R3 R1 R2
+ADD R3 R1 R3
+ADD R3 R1 R4
+ADD R3 R2 R1
+ADD R3 R2 R2
+ADD R3 R2 R3
+ADD R3 R2 R4
+ADD R3 R3 R1
+ADD R3 R3 R2
+ADD R3 R3 R3
+ADD R3 R3 R4
+ADD R3 R4 R1
+ADD R3 R4 R2
+ADD R3 R4 R3
+ADD R3 R4 R4
+
+ADD R4 R1 R1
+ADD R4 R1 R2
+ADD R4 R1 R3
+ADD R4 R1 R4
+ADD R4 R2 R1
+ADD R4 R2 R2
+ADD R4 R2 R3
+ADD R4 R2 R4
+ADD R4 R3 R1
+ADD R4 R3 R2
+ADD R4 R3 R3
+ADD R4 R3 R4
+ADD R4 R4 R1
+ADD R4 R4 R2
+ADD R4 R4 R3
+ADD R4 R4 R4
+
+// RSH
+RSH R1 R1
+RSH R1 R2
+RSH R1 R3
+RSH R1 R4
+
+RSH R2 R1
+RSH R2 R2
+RSH R2 R3
+RSH R2 R4
+
+RSH R3 R1
+RSH R3 R2
+RSH R3 R3
+RSH R3 R4
+
+RSH R4 R1
+RSH R4 R2
+RSH R4 R3
+RSH R4 R4
+
+// IMM
+IMM R1 .immskiplength
+LOD R1 R1
+ADD R1 PC R1
+.imm1 // labels for imm skip
+LOD R1 R1
+ADD PC PC R5 // R5 = 2
+.imm2
+
+IMM R2 .immskiplength
+LOD R2 R2
+ADD R2 PC R2
+LOD R2 R2
+ADD PC PC R5
+
+IMM R3 .immskiplength
+LOD R3 R3
+ADD R3 PC R3
+LOD R3 R3
+ADD PC PC R5
+
+IMM R4 .immskiplength
+LOD R4 R4
+ADD R4 PC R4
+LOD R4 R4
+ADD PC PC R5
+
+// LOD
+LOD R1 R1
+LOD R1 R2
+LOD R1 R3
+LOD R1 R4
+
+LOD R2 R1
+LOD R2 R2
+LOD R2 R3
+LOD R2 R4
+.
+LOD R3 R1
+LOD R3 R2
+LOD R3 R3
+LOD R3 R4
+
+LOD R4 R1
+LOD R4 R2
+LOD R4 R3
+LOD R4 R4
+
+// STR
+STR R1 R1
+STR R1 R2
+STR R1 R3
+STR R1 R4
+
+STR R2 R1
+STR R2 R2
+STR R2 R3
+STR R2 R4
+.
+STR R3 R1
+STR R3 R2
+STR R3 R3
+STR R3 R4
+
+STR R4 R1
+STR R4 R2
+STR R4 R3
+STR R4 R4
+
+// BGE
+BGE R1 R1 R1
+BGE R1 R1 R2
+BGE R1 R1 R3
+BGE R1 R1 R4
+BGE R1 R2 R1
+BGE R1 R2 R2
+BGE R1 R2 R3
+BGE R1 R2 R4
+BGE R1 R3 R1
+BGE R1 R3 R2
+BGE R1 R3 R3
+BGE R1 R3 R4
+BGE R1 R4 R1
+BGE R1 R4 R2
+BGE R1 R4 R3
+BGE R1 R4 R4
+
+BGE R2 R1 R1
+BGE R2 R1 R2
+BGE R2 R1 R3
+BGE R2 R1 R4
+BGE R2 R2 R1
+BGE R2 R2 R2
+BGE R2 R2 R3
+BGE R2 R2 R4
+BGE R2 R3 R1
+BGE R2 R3 R2
+BGE R2 R3 R3
+BGE R2 R3 R4
+BGE R2 R4 R1
+BGE R2 R4 R2
+BGE R2 R4 R3
+BGE R2 R4 R4
+
+BGE R3 R1 R1
+BGE R3 R1 R2
+BGE R3 R1 R3
+BGE R3 R1 R4
+BGE R3 R2 R1
+BGE R3 R2 R2
+BGE R3 R2 R3
+BGE R3 R2 R4
+BGE R3 R3 R1
+BGE R3 R3 R2
+BGE R3 R3 R3
+BGE R3 R3 R4
+BGE R3 R4 R1
+BGE R3 R4 R2
+BGE R3 R4 R3
+BGE R3 R4 R4
+
+BGE R4 R1 R1
+BGE R4 R1 R2
+BGE R4 R1 R3
+BGE R4 R1 R4
+BGE R4 R2 R1
+BGE R4 R2 R2
+BGE R4 R2 R3
+BGE R4 R2 R4
+BGE R4 R3 R1
+BGE R4 R3 R2
+BGE R4 R3 R3
+BGE R4 R3 R4
+BGE R4 R4 R1
+BGE R4 R4 R2
+BGE R4 R4 R3
+BGE R4 R4 R4
+
+// NOR
+NOR R1 R1 R1
+NOR R1 R1 R2
+NOR R1 R1 R3
+NOR R1 R1 R4
+NOR R1 R2 R1
+NOR R1 R2 R2
+NOR R1 R2 R3
+NOR R1 R2 R4
+NOR R1 R3 R1
+NOR R1 R3 R2
+NOR R1 R3 R3
+NOR R1 R3 R4
+NOR R1 R4 R1
+NOR R1 R4 R2
+NOR R1 R4 R3
+NOR R1 R4 R4
+
+NOR R2 R1 R1
+NOR R2 R1 R2
+NOR R2 R1 R3
+NOR R2 R1 R4
+NOR R2 R2 R1
+NOR R2 R2 R2
+NOR R2 R2 R3
+NOR R2 R2 R4
+NOR R2 R3 R1
+NOR R2 R3 R2
+NOR R2 R3 R3
+NOR R2 R3 R4
+NOR R2 R4 R1
+NOR R2 R4 R2
+NOR R2 R4 R3
+NOR R2 R4 R4
+
+NOR R3 R1 R1
+NOR R3 R1 R2
+NOR R3 R1 R3
+NOR R3 R1 R4
+NOR R3 R2 R1
+NOR R3 R2 R2
+NOR R3 R2 R3
+NOR R3 R2 R4
+NOR R3 R3 R1
+NOR R3 R3 R2
+NOR R3 R3 R3
+NOR R3 R3 R4
+NOR R3 R4 R1
+NOR R3 R4 R2
+NOR R3 R4 R3
+NOR R3 R4 R4
+
+NOR R4 R1 R1
+NOR R4 R1 R2
+NOR R4 R1 R3
+NOR R4 R1 R4
+NOR R4 R2 R1
+NOR R4 R2 R2
+NOR R4 R2 R3
+NOR R4 R2 R4
+NOR R4 R3 R1
+NOR R4 R3 R2
+NOR R4 R3 R3
+NOR R4 R3 R4
+NOR R4 R4 R1
+NOR R4 R4 R2
+NOR R4 R4 R3
+NOR R4 R4 R4
+
+// IN
+IN R1 %NUMB
+IN R2 %NUMB
+IN R3 %NUMB
+IN R4 %NUMB
+
+IN R1 %TEXT
+IN R2 %TEXT
+IN R3 %TEXT
+IN R4 %TEXT
+
+// OUT
+.OUTR1
+OUT %TEXT R1
+.OUTR2
+OUT %TEXT R2
+.OUTR3
+OUT %TEXT R3
+.OUTR4
+OUT %TEXT R4
+.OUTR5
+OUT %TEXT R5
+
+.end

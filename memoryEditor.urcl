@@ -1,0 +1,18 @@
+
+.main
+    // read user input (2 numbers)
+    // first number chooses ram location
+    IN R1 %NUMB
+
+    // second chooses value to write
+    IN R2 %NUMB
+
+    STR R1 R2
+
+    BGE R0 R0 R0
+
+
+
+
+
+
