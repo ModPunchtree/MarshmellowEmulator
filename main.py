@@ -48,8 +48,10 @@ def logicalNOR(x: int, y: int) -> int:
     while len(y) < 16:
         y = "0" + y
     answer = ""
-    for a, b in x, y:
-        if (a == 0) and (b == 0):
+    for i in range(16):
+        a = x[i]
+        b = y[i]
+        if (a == "0") and (b == "0"):
             answer += "1"
         else:
             answer += "0"
@@ -82,15 +84,64 @@ def drawScreen(display: list) -> None:
     screen = ""
     for y in range(4):
         for x in range(8):
-            screen += display[x][y]
+            screen += display[x][3 - y]
         screen += '\n'
     screen = screen[: -1]
-    print("\n\n\n")
+    print("Display:")
+    print("-"*8)
     print(screen)
+    print("-"*8)
 
-ram = [0] * (2**12)
-registers = [0] * (2**3)
-display = [[' '] * 4] * 8
+def disassemble(instruction: int) -> str:
+    opCodes = {
+        0x0000: "ADD",
+        0x0200: "BGE",
+        0x0400: "NOR",
+        0x0600: "RSH",
+        0x0800: "LOD",
+        0x0A00: "STR",
+        0x0C00: "IN" ,
+        0x0E00: "OUT"
+    }
+    registers = {
+        0: "R0",
+        1: "R1",
+        2: "R2",
+        3: "R3",
+        4: "R4",
+        5: "R5",
+        6: "SP",
+        7: "PC",
+    }
+    try:
+        opCode = instruction & 0xFE00
+    except:
+        return "INVALID INSTRUCTION EXECUTED"
+    
+    op1 = (instruction & 0x01C0) >> 6
+    op2 = (instruction & 0x0038) >> 3
+    op3 = (instruction & 0x0007)
+    
+    opCode = opCodes[opCode]
+    op1 = registers[op1]
+    op2 = registers[op2]
+    op3 = registers[op3]
+    
+    match opCode:
+        case "ADD" | "BGE" | "NOR":
+            return f"{opCode} {op1} {op2} {op3}"
+        case "IN":
+            return f"{opCode} {op1} %NUMB"
+        case "OUT":
+            return f"{opCode} %TEXT {op2}"
+        case "RSH" | "LOD":
+            return f"{opCode} {op1} {op2}"
+        case "STR":
+            return f"{opCode} {op2} {op3}"
+    
+ram = [0 for i in range(2**12)]
+registers = [0 for i in range(2**3)]
+display = [[' ' for y in range(4)] for x in range(8)]
 
 R0 = 0
 R1 = 1
@@ -117,13 +168,15 @@ memoryEditor = [
     0x0A0A, # STR R1 R2
     0x0200  # BGE R0 R0 R0
 ]
-terminal = [
-    0x0000
-]
 
-startingProgram = memoryEditor
+name = input("Input file name (without .csv extention) or leave blank to run the basic memory editor: ")
+if name:
+    f = open(name + ".csv", "r")
+    startingProgram = eval("[" + f.read() + "]")
+    f.close()
+else:
+    startingProgram = memoryEditor
 ram = startingProgram + ram[len(startingProgram): ]
-
 
 registers[SP] = (2**12) - 1
 errorCount = 0
@@ -132,6 +185,7 @@ drawScreen(display)
 while True:
     # fetch instruction
     instruction = ram[registers[PC]]
+    print(disassemble(instruction))
 
     opCode = (instruction & 0x0E00) >> 9
     op1    = (instruction & 0x01C0) >> 6
@@ -145,6 +199,8 @@ while True:
         source2        = registers[op3]
         answer         = fix16bit(source1 + source2)
         registers[op1] = answer
+        if op1 == PC:
+            dontIncrement = True
         
     elif opCode == BGE:
         source1        = registers[op2]
@@ -160,15 +216,21 @@ while True:
         source2        = registers[op3]
         answer         = logicalNOR(source1, source2)
         registers[op1] = answer
+        if op1 == PC:
+            dontIncrement = True
     
     elif opCode == RSH:
         source1        = registers[op2]
         answer         = source1 >> 1
         registers[op1] = answer
+        if op1 == PC:
+            dontIncrement = True
     
     elif opCode == LOD:
         address        = registers[op2] & 0x03FF
         registers[op1] = ram[address]
+        if op1 == PC:
+            dontIncrement = True
     
     elif opCode == STR:
         address        = registers[op2] & 0x03FF
@@ -177,7 +239,14 @@ while True:
     elif opCode == IN:
         while True:
             userInput = input("INPUT: ")
-            if userInput[: 1].isnumeric():
+            if userInput.upper() == "SAVE":
+                name = input("Input file name to save current RAM state to: ")
+                f = open(name + ".csv", "w+")
+                f.write(str(ram).replace(" ", "")[1: -1])
+                f.close()
+                print("Saved RAM state")
+                dontIncrement = True
+            elif userInput[: 1].isnumeric():
                 userInput = int(userInput, 0)
                 break
             elif userInput in charSet():
@@ -185,12 +254,15 @@ while True:
                 break
             else:
                 print(f"Invalid input: {userInput}\nOnly 16 bit unsigned numbers or chars in the char set are valid")
-            
-        registers[op1] = fix16bit(userInput)
+        
+        if type(userInput) == int:
+            registers[op1] = fix16bit(userInput)
+            if op1 == PC:
+                dontIncrement = True
     
     elif opCode == OUT:
         source1        = registers[op2]
-        printChar(source1)
+        printChar(source1, display)
     
     else:
         raise Exception("FATAL - Attempted to exectute an unrecognised instruction")
@@ -200,6 +272,5 @@ while True:
         registers[PC] += 1
         
     registers[PC] &= 0x03FF
-
 
 

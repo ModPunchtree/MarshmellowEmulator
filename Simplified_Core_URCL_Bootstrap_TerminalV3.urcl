@@ -7,8 +7,8 @@ RUN RAM
 // this simplified version of the terminal aims to have a smaller LUT to reduce the bootstrap terminal size as much as possible
 // to do this each instruction makes use of 2 temporary registers, meaning you do not need translations for every combination of registers in the LUT
 
-@DEFINE tempReg1 R4
-@DEFINE tempReg2 R5
+@DEFINE tempReg1 R3
+@DEFINE tempReg2 R4
 // these must be set to 2 registers that you will not use in programs created by the user
 
 .setup
@@ -18,7 +18,8 @@ RUN RAM
     NOR R2 R2 R2
     ADD R1 R1 R2
     NOR R1 R1 R1 // .imm2 - .imm1
-    STR .immskiplength R1
+    IMM R2 .immskiplength
+    STR R2 R1
 
     .printInstructionLengths
         IMM R1 .hashmap // start
@@ -33,7 +34,8 @@ RUN RAM
             ADD R3 R3 R4
             NOR R3 R3 R0 // subtraction then print
             OUT %NUMB R3
-            BGE .printInstructionLengths_loop R2 R1 // if end >= current pointer
+            IMM R3 .printInstructionLengths_loop
+            BGE R3 R2 R1 // if end >= current pointer
 
 .main
     // read user input (2 numbers)
@@ -50,7 +52,8 @@ RUN RAM
     // second number is the target memory location
     IN R3 %NUMB
 
-    BGE .directWord R0 R1
+    IMM R4 .directWord
+    BGE R4 R0 R1
 
     .mainLoop
         LOD R4 R1
@@ -87,7 +90,7 @@ RUN RAM
     DW .STR 
     DW .BGE
     DW .IMM
-    DW .IN_TEXT
+    DW .IN_NUMB
     DW .OUT_TEXT // add whatever I/O ports you want here
     DW .MOVT1R1
     DW .MOVT1R2
@@ -127,7 +130,7 @@ RUN RAM
         LOD @tempReg1 @tempReg1
         ADD PC PC @tempReg2
         .imm2
-    .IN_TEXT
+    .IN_NUMB
         IN @tempReg2 %TEXT
     .OUT_TEXT
         OUT %TEXT @tempReg2
